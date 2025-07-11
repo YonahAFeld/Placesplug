@@ -13,7 +13,7 @@ st.set_page_config(page_title="Group Chat Plug", page_icon="💬", layout="cente
 
 # Top: profile photo + intro
 st.image(profile_image, width=200)
-st.title("💬 Group Chat Plug")
+st.title("💬 Israeli Group Chat Finder")
 
 st.markdown("""
 Hi, I'm **Yonah** 👋  
@@ -21,22 +21,23 @@ When I moved to Israel, I found tremendous benefit in local group chats — but 
 
 So I have now (and I'm not exaggerating) **thousands of group chats**, all organized by city and interest, and I want to share them with you.
 
-Just let me know **where** you are and **what you're looking for**, and I’ll email you a link to join.
+Just let me know **where** you are and **what you're looking for**, and I’ll email you a link to a group chat.
 """)
 
 st.markdown("---")
 
 # Form input
 city = st.text_input("🌍 What city are you in?", placeholder="e.g. Tel Aviv, Haifa, Jerusalem")
-email = st.text_input("📧 Your email (so I can send you the link)", placeholder="you@example.com")
+email = st.text_input("📧 Your email (so I can send you the link. Don't use the Hide Email feature!)", placeholder="you@example.com")
 
 st.markdown("💡 Here are some examples of group I have, but I'm not joking when I say I have thousands")
 st.markdown("""
 - **Sports** → Tennis, Basketball, Surfing  
 - **Hobbies** → Photography, Hiking, Baking  
 - **Services** → Babysitting, Plumbing, Pets  
-- **Jobs** → Tech, Healthcare, Education  
-- **Apartments** → Roommates, Sublets, For Rent  
+- **Jobs/Networking** → Tech, Healthcare, Education  
+- **Apartments** → Roommates, Sublets, For Rent
+- **Buy/Sell** → Furniture, Clothing, Free Stuff
 """)
 
 interest = st.text_area("💭 What are you looking for?", placeholder="e.g. 'Looking for a volleyball group in Tel Aviv'")
