@@ -9,7 +9,7 @@ SLACK_WEBHOOK_URL = st.secrets["SLACK_WEBHOOK_URL"]
 profile_image = Image.open("feldpic.jpg")  # Ensure this is in the same folder or provide full path
 
 # Streamlit page setup
-st.set_page_config(page_title="Group Chat Plug", page_icon="💬", layout="centered")
+st.set_page_config(page_title="Israeli Group chat Finder", page_icon="💬", layout="centered")
 
 # Language toggle
 language = st.radio("🌐 Language / שפה", ["English", "עברית"], horizontal=True)
