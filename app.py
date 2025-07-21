@@ -1,9 +1,8 @@
 import streamlit as st
-import requests
-from PIL import Image
+import pandas as pd
+import time
 
-# Load secrets
-SLACK_WEBHOOK_URL = st.secrets["SLACK_WEBHOOK_URL"]
+from PIL import Image
 
 # Load your image
 profile_image = Image.open("feldpic.jpg")  # Ensure this is in the same folder or provide full path
@@ -22,95 +21,136 @@ texts = {
 Hi, I'm **Yonah** 👋  
 When I moved to Israel, I found tremendous benefit in local group chats — but I *hated* finding them.
 
-So I have now (and I'm not exaggerating) **thousands of group chats**, all organized by city and interest, and I want to share them with you.
+So I created (and I'm not exaggerating) **thousands of group chats**, all organized by city and interest, and now I want to share them with you.
 
-Just let me know **where** you are and **what you're looking for**, and I’ll email you a link to a group chat.
+Just tell me **where you are** and **what you're interested in**, and I'll instantly show you links to relevant group chats — no email, no waiting, just click and join!
 """,
-        "city": "🌍 What city are you in?",
-        "city_ph": "e.g. Tel Aviv, Haifa, Jerusalem",
-        "email": "📧 Your email (so I can send you the link. Don't use the Hide Email feature!)",
-        "email_ph": "you@example.com",
-        "examples_title": "💡 Here are some examples of group I have, but I'm not joking when I say I have thousands",
-        "examples": """
-- **Sports** → Tennis, Basketball, Surfing  
-- **Hobbies** → Photography, Hiking, Baking  
-- **Services** → Babysitting, Plumbing, Pets  
-- **Jobs/Networking** → Tech, Healthcare, Education  
-- **Apartments** → Roommates, Sublets, For Rent  
-- **Buy/Sell** → Furniture, Clothing, Free Stuff
-""",
-        "interest": "💭 What are you looking for?",
-        "interest_ph": "e.g. 'Looking for a volleyball group in Tel Aviv'",
-        "submit": "Send Request",
-        "error_email": "Email is required.",
-        "error_fields": "Please complete all fields.",
-        "success": "Got it! I’ll get back to you with a group chat link ASAP 💌"
+        "city": "🌍 Which city are you in?",
+        "interest": "💭 What kind of group chats are you looking for? Select all that apply.",
+        "submit": "Show Me Group Links",
+        "error_fields": "Please select a city and at least one group chat.",
+        "searching": "Searching for the best WhatsApp groups...",
+        "searching2": "Now checking Telegram groups...",
+        "results_title": "Your group chat links are ready!"
     },
     "עברית": {
         "title": "💬 מחפש קבוצת צ'אט",
         "intro": """
 היי, אני **יונה** 👋  
-כשעברתי לישראל, מצאתי המון ערך בקבוצות צ'אט מקומיות — אבל שנאתי לחפש אותן.
+כשעברתי לישראל, מצאתי המון ערך בקבוצות צ'אט מקומיות — אבל היה קשה למצוא אותן.
 
-אז עכשיו יש לי (ואני לא מגזים) **אלפי קבוצות**, מסודרות לפי עיר ותחום עניין — ואני רוצה לשתף אותן איתך.
+אז יצרתי (באמת!) **אלפי קבוצות**, מסודרות לפי עיר ותחום עניין — ואני רוצה לשתף אותן איתך.
 
-רק תגיד לי **איפה אתה נמצא** ו**מה אתה מחפש**, ואני אשלח לך קישור להצטרף.
+פשוט תבחר **איפה אתה גר** ו**מה מעניין אותך**, ותקבל מיד קישורים לקבוצות — בלי אימייל, בלי לחכות, רק לבחור ולהצטרף!
 """,
         "city": "🌍 באיזו עיר אתה?",
-        "city_ph": "לדוגמה: תל אביב, חיפה, ירושלים",
-        "email": "📧 האימייל שלך ( 'Hide Email'כדי שאוכל לשלוח לך את הקישור — אל תשתמש ב)",
-        "email_ph": "you@example.com",
-        "examples_title": "💡 הנה כמה דוגמאות לקבוצות שיש לי, אבל באמת יש לי אלפים",
-        "examples": """
-- **ספורט**: טניס, כדורסל, גלישה  
-- **תחביבים**: צילום, טיולים, אפייה  
-- **שירותים**: בייביסיטר, אינסטלטור, חיות  
-- **עבודה/נטוורקינג**: הייטק, חינוך, בריאות  
-- **דירות**: שותפים, להשכרה, סאבלט  
-- **קנייה / מכירה / למסירה**: ריהוט, בגדים, חינם
-""",
-        "interest": "💭 מה אתה מחפש?",
-        "interest_ph": "לדוגמה: 'מחפש קבוצה של כדורעף בתל אביב'",
-        "submit": "שלח בקשה",
-        "error_email": "חייבים למלא אימייל.",
-        "error_fields": "נא למלא את כל השדות.",
-        "success": "מעולה! אשלח לך קישור להצטרף בהקדם 💌"
+        "interest": "💭 אילו קבוצות מעניינות אותך? בחר כמה שתרצה.",
+        "submit": "הצג קישורים לקבוצות",
+        "error_fields": "נא לבחור עיר ולפחות קבוצה אחת.",
+        "searching": "מחפש את קבוצות הוואטסאפ הכי טובות...",
+        "searching2": "בודק גם קבוצות טלגרם...",
+        "results_title": "הקישורים שלך מוכנים!"
     }
 }
 
-# Use current language block
 t = texts[language]
 
-# UI
-st.image(profile_image, width=200)
-st.title(t["title"])
-st.markdown(t["intro"])
-st.markdown("---")
+# Load cities from CSV for dropdown
+city_df = pd.read_csv("deep-links-2025-07-21.csv")
+cities = sorted(city_df[city_df["City"].str.contains("Israel")]["City"].drop_duplicates())
+
+# Remove the examples markdown from the UI
+def render_intro():
+    st.image(profile_image, width=200)
+    st.title(t["title"])
+    st.markdown(t["intro"])
+    st.markdown("---")
+
+render_intro()
 
 # Inputs
-city = st.text_input(t["city"], placeholder=t["city_ph"])
-email = st.text_input(t["email"], placeholder=t["email_ph"])
+city = st.selectbox(t["city"], cities)
+email = st.text_input("📧 Your email (required)")
 
-st.markdown(t["examples_title"])
-st.markdown(t["examples"])
+# Get interests for the selected city
+city_interest_df = city_df[city_df["City"] == city][["Interest", "Category", "Deep Link"]].drop_duplicates()
 
-interest = st.text_area(t["interest"], placeholder=t["interest_ph"])
+# Define category order and display names
+category_order = [
+    ("Marketplace", "Buy/Sell"),
+    ("Apartments/Houses", "Apartments"),
+    ("Jobs", "Jobs"),
+    ("Services", "Services"),
+    ("Sports", "Sports"),
+    ("Hobbies", "Hobbies"),
+]
+category_order_dict = {cat: i for i, (cat, _) in enumerate(category_order)}
+category_display_dict = dict(category_order)
 
-# Submit
+# Prepare display options
+interest_options = []
+for _, row in city_interest_df.iterrows():
+    cat = row["Category"]
+    interest = row["Interest"]
+    display = f"[{category_display_dict.get(cat, cat)}] {interest}"
+    interest_options.append((category_order_dict.get(cat, 99), display, interest, row["Deep Link"]))
+
+# Sort by category order, then interest
+interest_options.sort()
+multiselect_labels = [x[1] for x in interest_options]
+multiselect_values = [x[2] for x in interest_options]
+multiselect_links = [x[3] for x in interest_options]
+
+# Remove st.markdown(t["examples_title"])
+# Remove st.markdown(t["examples"])
+
+selected_labels = st.multiselect(t["interest"], multiselect_labels, format_func=lambda x: x, help="Choose one or more group chats", key="interest_multiselect")
+selected_indices = [multiselect_labels.index(lbl) for lbl in selected_labels]
+
+import requests
+
 if st.button(t["submit"]):
-    if not email.strip():
-        st.error(t["error_email"])
-    elif not city.strip() or not interest.strip():
-        st.error(t["error_fields"])
+    if not city or not selected_labels or not email.strip():
+        st.error(t["error_fields"] + " (Email is required.)")
     else:
-        message = f"""
-📍 *City*: {city.strip()}
+        # Send Slack webhook
+        try:
+            SLACK_WEBHOOK_URL = st.secrets["SLACK_WEBHOOK_URL"]
+            interests_str = ', '.join([multiselect_values[idx] for idx in selected_indices])
+            message = f"""
 📧 *Email*: {email.strip()}
-🔍 *Request*: {interest.strip()}
+🌍 *City*: {city}
+💭 *Requested Groups*: {interests_str}
 """
-        response = requests.post(SLACK_WEBHOOK_URL, json={"text": message})
+            requests.post(SLACK_WEBHOOK_URL, json={"text": message})
+        except Exception as e:
+            st.warning(f"Could not send Slack notification: {e}")
 
-        if response.status_code == 200:
-            st.success(t["success"])
+        with st.spinner(t["searching"]):
+            status_area = st.empty()
+            status_area.info("Checking for WhatsApp groups...")
+            time.sleep(1.5)
+            status_area.info("Checking for Telegram groups...")
+            time.sleep(1.5)
+            status_area.empty()
+        st.success(t["results_title"])
+        if language == "עברית":
+            st.markdown(f"""
+<div style='direction: rtl; text-align: right;'>
+לא מצאתי קישורים לוואטסאפ או טלגרם...<br>
+<b>{city}</b><br>
+אבל הנה קישורים לקבוצות רלוונטיות שכדאי לבדוק.<br>
+כדי להצטרף, תוריד את האפליקציה <b>'Places: Local Group Chats'</b>!
+</div>
+""", unsafe_allow_html=True)
         else:
-            st.error(f"Slack API error: {response.status_code} - {response.text}")
+            st.markdown(f"""
+I didn't find WhatsApp or Telegram links...<br>
+**{city}**<br>
+But here are links to relevant group chats that you should check out.<br>
+Be sure to download the app <b>Places: Local Group Chats</b> to join!
+""", unsafe_allow_html=True)
+        for idx in selected_indices:
+            interest = multiselect_values[idx]
+            link = multiselect_links[idx]
+            st.markdown(f"**{interest}**: [Join Group]({link})")
