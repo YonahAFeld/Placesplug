@@ -8,7 +8,7 @@ from PIL import Image
 profile_image = Image.open("feldpic.jpg")  # Ensure this is in the same folder or provide full path
 
 # Streamlit page setup
-st.set_page_config(page_title="Israeli Group chat Finder", page_icon="💬", layout="centered")
+st.set_page_config(page_title="Looking for local group chats in Israel?", page_icon="💬", layout="centered")
 
 # Language toggle
 language = st.radio("🌐 Language / שפה", ["English", "עברית"], horizontal=True)
@@ -16,14 +16,23 @@ language = st.radio("🌐 Language / שפה", ["English", "עברית"], horizon
 # Translations
 texts = {
     "English": {
-        "title": "💬 Israeli Group Chat Finder",
-        "intro": """
-Hi, I'm **Yonah** 👋  
-When I moved to Israel, I found tremendous benefit in local group chats — but I *hated* finding them.
+        "title": "Looking for local group chats in Israel?",
+        "about_me": """
+👤 **About Me**  
+Hi, I'm Yonah Feld 👋  
+I made Aliyah in 2017, and like many new arrivals, I had to figure out everything from scratch — finding furniture, pickup basketball games, sublets, Hebrew tutors, you name it.  
+Over time, I started stumbling across public WhatsApp and Telegram groups that made life so much easier. Local group chats are one of Israel's most powerful (but hidden) resources.
 
-So I created (and I'm not exaggerating) **thousands of group chats**, all organized by city and interest, and now I want to share them with you.
+So I created thousands of group chats all organized by city and topic and I want to share them with you.
 
-Just tell me **where you are** and **what you're interested in**, and I'll instantly show you links to relevant group chats — no email, no waiting, just click and join!
+🧠 Follow me on IG, I promise I'm real: [@yonahfeld](https://instagram.com/yonahfeld)
+""",
+  
+        "how_it_works": """
+🎯 **How it works**  
+1. Pick your city  
+2. Pick what you need  
+3. Get links instantly
 """,
         "city": "🌍 Which city are you in?",
         "interest": "💭 What kind of group chats are you looking for? Select all that apply.",
@@ -35,13 +44,22 @@ Just tell me **where you are** and **what you're interested in**, and I'll insta
     },
     "עברית": {
         "title": "💬 מחפש קבוצת צ'אט",
-        "intro": """
-היי, אני **יונה** 👋  
-כשעברתי לישראל, מצאתי המון ערך בקבוצות צ'אט מקומיות — אבל היה קשה למצוא אותן.
+        "about_me": """
+👤 **אודותיי**  
+היי, אני יונה פלד 👋  
+עליתי לארץ ב-2017, וכמו הרבה עולים חדשים, הייתי צריך להבין הכל מאפס — מציאת רהיטים, משחקי כדורסל מזדמנים, דירות זמניות, מורים לעברית, הכל.  
+עם הזמן, התחלתי להיתקל בקבוצות וואטסאפ וטלגרם ציבוריות שהפכו את החיים להרבה יותר קלים. קבוצות צ'אט מקומיות הן אחד המשאבים החזקים ביותר (אבל נסתרים) של ישראל.
 
-אז יצרתי (באמת!) **אלפי קבוצות**, מסודרות לפי עיר ותחום עניין — ואני רוצה לשתף אותן איתך.
+אז יצרתי אלפי קבוצות צ'אט מסודרות לפי עיר ונושא ואני רוצה לשתף אותן איתך.
 
-פשוט תבחר **איפה אתה גר** ו**מה מעניין אותך**, ותקבל מיד קישורים לקבוצות — בלי אימייל, בלי לחכות, רק לבחור ולהצטרף!
+🧠 עקבו אחרי באינסטגרם, אני מבטיח שאני אמיתי: [@yonahfeld](https://instagram.com/yonahfeld)
+""",
+       
+        "how_it_works": """
+🎯 **איך זה עובד**  
+1. בחר את העיר שלך  
+2. בחר מה אתה צריך  
+3. קבל קישורים מיד
 """,
         "city": "🌍 באיזו עיר אתה?",
         "interest": "💭 אילו קבוצות מעניינות אותך? בחר כמה שתרצה.",
@@ -61,10 +79,22 @@ cities = sorted(city_df[city_df["City"].str.contains("Israel")]["City"].drop_dup
 
 # Remove the examples markdown from the UI
 def render_intro():
-    st.image(profile_image, width=200)
+    # Create two columns for photo and about me
+    col1, col2 = st.columns([1, 2])
+    
+    with col1:
+        st.image(profile_image, width=200)
+    
+    with col2:
+        st.markdown(t["about_me"])
+    
+    st.markdown("")  # Add some space
     st.title(t["title"])
-    st.markdown(t["intro"])
+    st.markdown("")  # Add space after title
+    st.markdown(t["how_it_works"])
+    st.markdown("")  # Add space before divider
     st.markdown("---")
+    st.markdown("")  # Add space after divider
 
 render_intro()
 
@@ -87,36 +117,27 @@ category_order = [
 category_order_dict = {cat: i for i, (cat, _) in enumerate(category_order)}
 category_display_dict = dict(category_order)
 
-# Prepare display options
-interest_options = []
-for _, row in city_interest_df.iterrows():
-    cat = row["Category"]
-    interest = row["Interest"]
-    display = f"[{category_display_dict.get(cat, cat)}] {interest}"
-    interest_options.append((category_order_dict.get(cat, 99), display, interest, row["Deep Link"]))
-
-# Sort by category order, then interest
-interest_options.sort()
-multiselect_labels = [x[1] for x in interest_options]
-multiselect_values = [x[2] for x in interest_options]
-multiselect_links = [x[3] for x in interest_options]
-
-# Remove st.markdown(t["examples_title"])
-# Remove st.markdown(t["examples"])
-
-selected_labels = st.multiselect(t["interest"], multiselect_labels, format_func=lambda x: x, help="Choose one or more group chats", key="interest_multiselect")
-selected_indices = [multiselect_labels.index(lbl) for lbl in selected_labels]
+# Grouped multiselect with headings
+selected_interests = []
+category_to_interests = {cat: city_interest_df[city_interest_df['Category'] == cat]['Interest'].tolist() for cat, _ in category_order}
+for cat, cat_display in category_order:
+    options = category_to_interests.get(cat, [])
+    if options:
+        st.markdown(f"**{cat_display}**")
+        selected = st.multiselect("", options, key=f"cat_{cat}")
+        selected_interests.extend(selected)
+selected_indices = [city_interest_df[city_interest_df['Interest'] == interest].index[0] for interest in selected_interests]
 
 import requests
 
 if st.button(t["submit"]):
-    if not city or not selected_labels or not email.strip():
+    if not city or not selected_interests or not email.strip():
         st.error(t["error_fields"] + " (Email is required.)")
     else:
         # Send Slack webhook
         try:
             SLACK_WEBHOOK_URL = st.secrets["SLACK_WEBHOOK_URL"]
-            interests_str = ', '.join([multiselect_values[idx] for idx in selected_indices])
+            interests_str = ', '.join(selected_interests)
             message = f"""
 📧 *Email*: {email.strip()}
 🌍 *City*: {city}
@@ -136,21 +157,28 @@ if st.button(t["submit"]):
         st.success(t["results_title"])
         if language == "עברית":
             st.markdown(f"""
-<div style='direction: rtl; text-align: right;'>
-לא מצאתי קישורים לוואטסאפ או טלגרם...<br>
-<b>{city}</b><br>
-אבל הנה קישורים לקבוצות רלוונטיות שכדאי לבדוק.<br>
-כדי להצטרף, תוריד את האפליקציה <b>'Places: Local Group Chats'</b>!
+<div style='direction: rtl; text-align: right; background-color: #f0f4fa; border-radius: 12px; padding: 18px 24px; margin-bottom: 18px; border: 1px solid #e0e6ed;'>
+<span style='font-size: 2em;'>💬</span><br>
+<b>לא מצאנו קבוצות וואטסאפ או טלגרם</b><br>
+אבל הנה כל קבוצות הצ'אט עבור <b>{city}</b>!
 </div>
 """, unsafe_allow_html=True)
         else:
             st.markdown(f"""
-I didn't find WhatsApp or Telegram links...<br>
-**{city}**<br>
-But here are links to relevant group chats that you should check out.<br>
-Be sure to download the app <b>Places: Local Group Chats</b> to join!
+<div style='background-color: #f0f4fa; border-radius: 12px; padding: 18px 24px; margin-bottom: 18px; border: 1px solid #e0e6ed;'>
+<span style='font-size: 2em;'>💬</span><br>
+<b>We couldn't find any WhatsApp or Telegram group chats</b><br>
+But here are all group chats for <b>{city}</b>!
+</div>
+""", unsafe_allow_html=True)
+
+        # Show app download links
+        st.markdown("""
+**You'll have to download this free app to join:**  
+[<img src='https://upload.wikimedia.org/wikipedia/commons/6/67/App_Store_%28iOS%29.svg' width='24' style='vertical-align:middle'/> iOS](https://apps.apple.com/us/app/places-local-group-chats/id6482985182)  
+[<img src='https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg' width='24' style='vertical-align:middle'/> Android](https://play.google.com/store/apps/details?id=com.zackebenfeld.Places&pcampaignid=web_share)
 """, unsafe_allow_html=True)
         for idx in selected_indices:
-            interest = multiselect_values[idx]
-            link = multiselect_links[idx]
+            interest = city_interest_df.loc[idx, 'Interest']
+            link = city_interest_df.loc[idx, 'Deep Link']
             st.markdown(f"**{interest}**: [Join Group]({link})")
